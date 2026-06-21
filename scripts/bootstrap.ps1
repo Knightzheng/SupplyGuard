@@ -20,6 +20,9 @@ $Python = Join-Path $VirtualEnvironment "Scripts\python.exe"
 Push-Location $ProjectRoot
 try {
     & $Python -m supplyguard --version
+    if ($LASTEXITCODE -ne 0) {
+        throw "SupplyGuard CLI smoke test failed with exit code $LASTEXITCODE."
+    }
 }
 finally {
     Pop-Location

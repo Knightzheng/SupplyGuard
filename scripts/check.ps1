@@ -17,7 +17,13 @@ $env:XDG_CACHE_HOME = Join-Path $TemporaryRoot "xdg-cache"
 Push-Location $ProjectRoot
 try {
     & $Python -m compileall -q supplyguard tests
+    if ($LASTEXITCODE -ne 0) {
+        throw "Python compilation check failed with exit code $LASTEXITCODE."
+    }
     & $Python -m unittest discover -s tests -p "test_*.py" -v
+    if ($LASTEXITCODE -ne 0) {
+        throw "Python test suite failed with exit code $LASTEXITCODE."
+    }
 }
 finally {
     Pop-Location

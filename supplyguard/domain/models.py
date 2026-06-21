@@ -34,7 +34,8 @@ def _required_text(value: str, field_name: str) -> str:
     return normalized
 
 
-def _normalize_package_name(ecosystem: Ecosystem, name: str) -> str:
+def normalize_package_name(ecosystem: Ecosystem, name: str) -> str:
+    """Return the canonical package name for a supported ecosystem."""
     normalized = _required_text(name, "name")
     if ecosystem is Ecosystem.NPM:
         normalized = normalized.lower()
@@ -98,7 +99,7 @@ class Component:
 
     def __post_init__(self) -> None:
         ecosystem = Ecosystem(self.ecosystem)
-        name = _normalize_package_name(ecosystem, self.name)
+        name = normalize_package_name(ecosystem, self.name)
         version = _required_text(self.version, "version")
         evidence = tuple(sorted(set(self.evidence)))
 

@@ -8,17 +8,18 @@
 
 | 项目 | 当前状态 |
 |---|---|
-| 项目阶段 | M2：OSV 数据同步与漏洞匹配（待启动） |
-| 总体状态 | M0、M1 已验收；两类依赖输入和统一图模型可用 |
+| 项目阶段 | M2：OSV 数据同步与漏洞匹配（进行中） |
+| 总体状态 | M0、M1 已验收；M2 Advisory 模型和首批匹配已完成 |
 | 当前版本 | v0.1.0.dev0 |
 | 公开仓库 | https://github.com/Knightzheng/SupplyGuard |
-| 当前工作重点 | 设计本地 OSV advisory 模型、快照存储和版本匹配接口 |
-| 已完成 | M0 全部内容；M1 两类输入、领域模型、依赖图、路径/环算法和显式解析告警 |
-| 进行中 | 无 |
-| 下一任务 | 使用仓库内最小 OSV 样本定义 advisory 领域模型和 npm/PyPI 版本匹配测试 |
+| 当前开发分支/PR | `codex/osv-advisory-models` / https://github.com/Knightzheng/SupplyGuard/pull/1 |
+| 当前工作重点 | 设计 SQLite Advisory Repository、本地索引和原子快照导入 |
+| 已完成 | M0、M1；M2 OSV 模型、安全解析、SemVer 区间和可解释组件匹配 |
+| 进行中 | M2：OSV 数据同步与漏洞匹配 |
+| 下一任务 | 建立与存储实现解耦的 Advisory Repository，并以 SQLite 完成离线包坐标查询 |
 | 当前阻塞 | 无 |
 | 额外金钱成本 | 0 元 |
-| 最后更新时间 | 2026-06-21 16:56，Asia/Shanghai |
+| 最后更新时间 | 2026-06-21 17:26，Asia/Shanghai |
 
 ## 2. 里程碑看板
 
@@ -26,7 +27,7 @@
 |---|---|---:|---|
 | M0 治理和工程骨架 | 已完成 | 100% | 治理文档、项目骨架、最小 CLI、独立环境和测试入口均已验证 |
 | M1 依赖解析与统一图模型 | 已完成 | 100% | package-lock v2/v3 与精确 requirements 输入、统一图、证据、路径和异常测试均已完成 |
-| M2 OSV 同步与漏洞匹配 | 未开始 | 0% | — |
+| M2 OSV 同步与漏洞匹配 | 进行中 | 30% | OSV 模型、Schema 关键校验、SemVer 事件范围和首批匹配已完成；同步与本地索引待完成 |
 | M3 风险报告和 SBOM | 未开始 | 0% | — |
 | M4 API 与 Web 控制台 | 未开始 | 0% | — |
 | M5 修复建议、策略与 CI | 未开始 | 0% | — |
@@ -45,6 +46,7 @@
 | ADR-005 | M0 使用 argparse 与 unittest 建立无第三方依赖的离线基线 | 已采纳 | PyPI 当前不可达；先保证独立环境和核心开发链路可运行，Typer/pytest 作为后续可替换工具而非运行前提 |
 | ADR-006 | 组件稳定 ID 使用规范化 Package URL | 已采纳 | PURL 可读、确定且便于后续 SBOM 与 OSV 对接；来源证据不参与 ID，避免同一组件因文件位置变化而改变身份 |
 | ADR-007 | 首批 Python 输入采用 requirements.txt 精确 `==` 固定版本 | 已采纳 | 可用标准库离线解析；通配符、范围、URL 和 include 不伪装成精确组件，而是显式告警 |
+| ADR-008 | M2 首批范围比较只支持 npm SEMVER；PyPI 先支持 affected.versions 精确匹配 | 已采纳 | 错误实现 PEP 440 会产生漏报或误报；未实现的 ECOSYSTEM/GIT 范围返回结构化告警，不静默跳过 |
 
 后续改变已采纳决策时，必须追加新的决策记录并说明替代关系。
 
@@ -56,16 +58,17 @@
 | R-002 | 中 | 用户主要面试语言尚未确认 | 核心先保持 Python；在进入 Java 生态或大规模前端工作前再确认，不阻塞 M0 |
 | R-003 | 低 | OSV 本地数据规模和同步方式尚未实测 | M2 先针对单一生态做小规模原型与磁盘占用测量 |
 | R-004 | 低 | 当前环境访问 PyPI 会长时间无响应 | M0 已采用标准库离线链路；后续引入第三方依赖前先做短时连通性检查，禁止重复长时间重试 |
+| R-005 | 中 | PyPI ECOSYSTEM 和 GIT 范围比较尚未实现 | 匹配结果携带 unsupported-version-range 告警；M2 后续优先实现 PEP 440，再评估 GIT 范围需求 |
 
 ## 5. 下一线程执行入口
 
 新线程必须先阅读 `PROJECT_RULES.md`，然后执行以下最小任务：
 
 1. 检查项目文件树和 Git 状态。
-2. 使用仓库内最小 OSV JSON 样本定义 Advisory、AffectedPackage、VersionRange 等领域模型。
-3. 先添加 npm/PyPI 版本边界、引入事件和修复事件测试，再实现匹配。
-4. 将 advisory 读取接口与具体存储解耦，为后续 SQLite 索引保留边界。
-5. 运行 `scripts\check.ps1`，确认现有 29 项测试和新增测试均通过。
+2. 定义只读 Advisory Repository 协议，按生态和规范化包名查询候选漏洞。
+3. 先添加空库、重复导入、事务失败、重启后查询和损坏 JSON 测试。
+4. 使用标准库 SQLite 建立本地索引；快照导入失败不得破坏上一份可用数据。
+5. 运行 `scripts\check.ps1`，确认现有 41 项测试和新增测试均通过。
 6. 更新本文件的当前快照并追加推进记录。
 
 ## 6. 推进记录
@@ -285,6 +288,60 @@
 - 风险与阻塞：GitHub 创建后的默认分支元数据可能存在短暂同步延迟，但 `main` 已成功推送并设置 upstream。
 - 下一步：开始 M2，先用仓库内固定 OSV 样本实现 Advisory 模型、版本事件范围和匹配测试。
 - 文件边界合规声明：本地文件修改仅发生在项目根目录和项目内 `.git`；GitHub 写入属于用户明确授权的远端仓库操作，没有写入其他本地目录。
+
+### 记录 0009：启动 M2 OSV 模型与首批匹配
+
+- 时间：2026-06-21 17:24，Asia/Shanghai
+- 执行者：Codex 当前线程
+- 对应里程碑：M2 OSV 数据同步与漏洞匹配
+- 本次目标：基于 OSV Schema 建立 Advisory 领域模型、事件区间和可解释组件匹配基线。
+- 开始前状态：公开仓库已建立，`main` 最新提交为 `f2344a3`；M2 尚无代码。
+- 实际完成：
+  - 创建分支 `codex/osv-advisory-models`。
+  - 只读核对 OSSF 官方 OSV Schema，确认 affected/package/ranges/versions 及 introduced、fixed、last_affected、limit 结构。
+  - 添加仓库内合成 OSV 固定样本，不依赖在线测试数据。
+  - 实现不可变 Advisory、AffectedPackage、VersionRange 和 VersionEvent 模型。
+  - 实现无第三方依赖的 SemVer 2.0 比较，覆盖 prerelease 顺序和 build metadata 忽略规则。
+  - 实现 OSV UTF-8/体积限制、时间戳、事件结构和 endpoint 语义校验。
+  - 实现 npm SEMVER 范围、npm/PyPI 显式版本匹配及结构化匹配证据。
+  - 对 ECOSYSTEM/GIT 或非法版本返回结构化告警，不将未知状态当成安全。
+  - 同步 README 的 M2 进度、架构范围、安全限制和 41 项测试说明。
+- 创建文件：`supplyguard/advisories/*`、`supplyguard/matching/*`、`tests/fixtures/osv/OSV-SYNTHETIC-0001.json`、`tests/test_osv_advisories.py`、`tests/test_advisory_matching.py`。
+- 修改文件：`supplyguard/domain/__init__.py`、`supplyguard/domain/models.py`、`README.md`、`REPORT.md`。
+- 删除文件：无。
+- 关键命令与检查：官方 schema 只读请求；`scripts\check.ps1`；warnings-as-errors unittest；`git diff --check`。
+- 测试结果：初始测试按预期因模块不存在而失败；首次实现暴露无效混合 endpoint 夹具和开放区间 None 比较缺陷，修复后 41 项 unittest 与 warnings-as-errors 全部通过，普通测试约 0.305 秒。
+- 技术决策及理由：严格遵守同一 OSV range 中 fixed 与 last_affected 互斥；只实现能够验证的 SemVer 比较，PEP 440/GIT 不做猜测性比较。
+- 计划偏差：无。
+- 未完成事项：SQLite 索引、快照导入、增量同步、PyPI ECOSYSTEM 范围和批量组件扫描尚未实现。
+- 风险与阻塞：当前匹配覆盖面有限但限制已显式返回；没有外部服务阻塞。
+- 下一步：定义 Advisory Repository 接口，使用标准库 SQLite 实现按生态/包名的离线候选查询和原子快照替换。
+- 文件边界合规声明：固定样本、临时测试数据、源码、报告和缓存全部位于项目根目录内；外部 OSV Schema 仅只读访问。
+- 勘误：记录 0008 的时间误写为 17:22；当时 `Get-Date` 实际输出为 2026-06-21 17:15 +08:00。历史记录不改写，本条追加纠正。
+
+### 记录 0010：推送 M2 分支并创建草稿 PR
+
+- 时间：2026-06-21 17:26，Asia/Shanghai
+- 执行者：Codex 当前线程
+- 对应里程碑：M2 OSV 数据同步与漏洞匹配
+- 本次目标：按 GitHub 分支工作流发布 M2 第一单元，形成可审查检查点。
+- 开始前状态：M2 代码、README 和记录已经通过 41 项测试，尚未提交到远端功能分支。
+- 实际完成：
+  - 提交 `04c1a67 feat: add OSV advisory matching`。
+  - 推送 `codex/osv-advisory-models` 并设置 upstream。
+  - 创建草稿 PR #1 `[codex] add OSV advisory matching`，目标分支为 `main`。
+  - PR 正文记录变更、原因、影响、未实现边界和验证命令。
+- 创建文件：项目跟踪文件无新增；忽略目录 `.tmp` 中创建 `pr-body.md` 作为 GitHub CLI 输入。
+- 修改文件：`REPORT.md`。
+- 删除文件：无。
+- 关键命令与检查：`git push -u origin codex/osv-advisory-models`；`gh pr create --draft`；`gh pr view 1`。
+- 测试结果：提交前 41 项 unittest 与 warnings-as-errors 全部通过；PR 查询确认 state=OPEN、isDraft=true、base=main、head=codex/osv-advisory-models。
+- 技术决策及理由：M2 后续小单元继续推送到同一草稿 PR，待本阶段检查点稳定后再转为可审查状态。
+- 计划偏差：首次 `gh pr view` 未提供 PR 编号而返回参数错误；PR 已在前一步成功创建，随后使用编号 1 查询确认，没有重复创建。
+- 未完成事项：草稿 PR 未合并；SQLite Repository、快照导入和数据同步仍待实现。
+- 风险与阻塞：无。
+- 下一步：在当前功能分支先以失败测试定义 Advisory Repository 和原子 SQLite 快照导入，再实现代码并推送到 PR #1。
+- 文件边界合规声明：本地跟踪修改仅位于项目根目录；PR 临时正文位于项目内 `.tmp`；远端写入仅针对用户授权的 `Knightzheng/SupplyGuard`。
 
 ---
 

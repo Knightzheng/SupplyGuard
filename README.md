@@ -18,7 +18,7 @@ SupplyGuard 是一个离线优先、可解释的软件供应链安全分析平�
 |---|---|---|
 | M0 治理和工程骨架 | 已完成 | 独立虚拟环境、CLI、测试门禁、项目规则和跨线程报告 |
 | M1 依赖解析与统一图模型 | 已完成 | package-lock、requirements、PURL、依赖图、路径查询和环检测 |
-| M2 OSV 数据与漏洞匹配 | 准备开始 | Advisory 模型、本地索引、版本范围匹配和离线查询 |
+| M2 OSV 数据与漏洞匹配 | 进行中 | Advisory 模型、SemVer 事件范围和可解释组件匹配已实现；本地索引待完成 |
 | M3 风险报告和 SBOM | 未开始 | JSON、终端报告与 CycloneDX |
 | M4 API 与 Web 控制台 | 未开始 | FastAPI、任务管理与可视化 |
 | M5 修复建议、策略与 CI | 未开始 | 升级建议、豁免策略和门禁 |
@@ -53,6 +53,15 @@ SupplyGuard 是一个离线优先、可解释的软件供应链安全分析平�
 - 有数量及深度限制的根到组件路径查询。
 - 基于 Tarjan 算法的循环强连通分量检测。
 
+### OSV 与匹配（M2 进行中）
+
+- OSV Advisory、AffectedPackage、VersionRange 和事件模型。
+- `introduced`、`fixed`、`last_affected` 与 `limit` 端点语义。
+- 无第三方依赖的 SemVer 2.0 比较，包括 prerelease 顺序。
+- npm SEMVER 范围匹配和修复版本证据。
+- npm/PyPI `affected.versions` 显式版本匹配。
+- 对暂不支持的 ECOSYSTEM/GIT 范围返回结构化跳过原因。
+
 ## 架构
 
 ```mermaid
@@ -67,7 +76,7 @@ flowchart LR
     H --> I["CLI / API / Web / CI"]
 ```
 
-当前代码已经覆盖左侧依赖输入和图模型；OSV、本地索引和匹配属于正在开始的 M2。
+当前代码已经覆盖依赖输入、图模型、OSV 模型和首批匹配；本地索引、增量同步与完整离线查询仍属于 M2 后续工作。
 
 ## 快速开始
 
@@ -102,7 +111,7 @@ cd SupplyGuard
 .\scripts\check.ps1
 ```
 
-当前检查包括 Python 语法编译和 29 项 `unittest`。测试覆盖：
+当前检查包括 Python 语法编译和 41 项 `unittest`。测试覆盖：
 
 - CLI 版本、帮助和错误参数。
 - npm/PyPI 名称规范化与稳定 PURL。
@@ -111,8 +120,9 @@ cd SupplyGuard
 - package-lock v2/v3、嵌套依赖和 workspace link。
 - requirements 精确固定、未固定版本告警和损坏输入。
 - UTF-8、体积上限和项目内临时文件读取。
+- OSV Schema 关键字段、事件序列、SemVer 边界及匹配证据。
 
-这里的“29 项通过”是当前仓库可复现的测试数量，不代表已经完成漏洞检测效果评测。
+这里的“41 项通过”是当前仓库可复现的测试数量，不代表已经完成漏洞检测效果评测。
 
 ## 安全边界
 
@@ -121,7 +131,7 @@ cd SupplyGuard
 - 不将本地绝对路径、令牌或密钥写入公开报告。
 - 未固定版本、URL、include 指令和未知输入不会被伪装成精确组件。
 - requirements 是扁平清单，不能恢复真实传递依赖来源；后续报告会明确这一限制。
-- 当前尚未接入 OSV，不能据此判断仓库是否存在已知漏洞。
+- 当前尚未完成 OSV 本地数据同步和完整生态版本比较，不能据此判断仓库是否不存在已知漏洞。
 
 ## 项目治理
 

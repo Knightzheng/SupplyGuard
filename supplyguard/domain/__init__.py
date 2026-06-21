@@ -6,6 +6,7 @@ from supplyguard.domain.models import (
     DependencyScope,
     Ecosystem,
     SourceEvidence,
+    normalize_package_name,
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "DependencyScope",
     "Ecosystem",
     "SourceEvidence",
+    "normalize_package_name",
 ]

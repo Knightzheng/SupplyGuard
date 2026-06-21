@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "supplyguard"
+dynamic = ["version"]
+description = "Offline-first software supply-chain security analysis platform."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+authors = [
+  { name = "SupplyGuard Contributors" },
+]
+keywords = ["sbom", "security", "supply-chain", "vulnerability"]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Environment :: Console",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Security",
+]
+dependencies = []
+
+[project.scripts]
+supplyguard = "supplyguard.cli:main"
+
+[project.urls]
+Documentation = "https://example.invalid/supplyguard"
+Repository = "https://example.invalid/supplyguard"
+
+[tool.hatch.version]
+path = "supplyguard/__about__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["supplyguard"]
+

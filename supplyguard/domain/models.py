@@ -16,6 +16,15 @@ class Ecosystem(StrEnum):
     PYPI = "pypi"
 
 
+class DependencyScope(StrEnum):
+    """The declaration context of a dependency relationship."""
+
+    RUNTIME = "runtime"
+    DEVELOPMENT = "development"
+    OPTIONAL = "optional"
+    PEER = "peer"
+
+
 def _required_text(value: str, field_name: str) -> str:
     normalized = value.strip()
     if not normalized:
@@ -112,6 +121,7 @@ class DependencyEdge:
     parent_id: str | None = None
     declared_requirement: str | None = None
     evidence: SourceEvidence | None = None
+    scope: DependencyScope = DependencyScope.RUNTIME
 
     def __post_init__(self) -> None:
         child_id = _required_text(self.child_id, "child_id")
@@ -121,10 +131,12 @@ class DependencyEdge:
         requirement = self.declared_requirement
         if requirement is not None:
             requirement = _required_text(requirement, "declared_requirement")
+        scope = DependencyScope(self.scope)
 
         object.__setattr__(self, "child_id", child_id)
         object.__setattr__(self, "parent_id", parent_id)
         object.__setattr__(self, "declared_requirement", requirement)
+        object.__setattr__(self, "scope", scope)
 
     @property
     def is_direct(self) -> bool:

@@ -26,12 +26,13 @@ def _merge_components(components: tuple[Component, ...]) -> tuple[Component, ...
     return tuple(merged[component_id] for component_id in sorted(merged))
 
 
-def _edge_sort_key(edge: DependencyEdge) -> tuple[str, str, str, str, str]:
+def _edge_sort_key(edge: DependencyEdge) -> tuple[str, str, str, str, str, str]:
     evidence_file = edge.evidence.source_file if edge.evidence else ""
     evidence_location = edge.evidence.location if edge.evidence else ""
     return (
         edge.parent_id or "",
         edge.child_id,
+        edge.scope.value,
         edge.declared_requirement or "",
         evidence_file,
         evidence_location,

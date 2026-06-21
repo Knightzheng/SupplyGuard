@@ -12,19 +12,19 @@
 | 总体状态 | M0 已验收，项目可离线开发和测试 |
 | 当前版本 | v0.1.0.dev0 |
 | 当前工作重点 | 实现 package-lock v2/v3 解析器和统一依赖图 |
-| 已完成 | M0 全部内容；M1 领域模型、稳定 PURL ID、确定性依赖图、路径查询与环检测 |
+| 已完成 | M0 全部内容；M1 领域模型、依赖图、路径/环算法、package-lock v2/v3 安全解析 |
 | 进行中 | M1：依赖解析与统一图模型 |
-| 下一任务 | 以测试驱动实现 package-lock v2/v3 解析及 Node 依赖位置解析 |
+| 下一任务 | 选择并实现 Python 固定版本依赖输入，完成 M1 的第二类 MVP 解析器 |
 | 当前阻塞 | 无 |
 | 额外金钱成本 | 0 元 |
-| 最后更新时间 | 2026-06-21 16:39，Asia/Shanghai |
+| 最后更新时间 | 2026-06-21 16:49，Asia/Shanghai |
 
 ## 2. 里程碑看板
 
 | 里程碑 | 状态 | 完成度 | 验收说明 |
 |---|---|---:|---|
 | M0 治理和工程骨架 | 已完成 | 100% | 治理文档、项目骨架、最小 CLI、独立环境和测试入口均已验证 |
-| M1 依赖解析与统一图模型 | 进行中 | 45% | 领域模型、确定性图、证据合并、路径查询和环检测已实现；输入解析器待完成 |
+| M1 依赖解析与统一图模型 | 进行中 | 75% | package-lock v2/v3、Node 嵌套解析和 workspace link 已覆盖；Python 固定依赖输入待完成 |
 | M2 OSV 同步与漏洞匹配 | 未开始 | 0% | — |
 | M3 风险报告和 SBOM | 未开始 | 0% | — |
 | M4 API 与 Web 控制台 | 未开始 | 0% | — |
@@ -205,6 +205,32 @@
 - 风险与阻塞：大图的路径数量可能指数增长，当前通过 `max_paths` 和 `max_depth` 限制；后续基准必须验证。
 - 下一步：建立 package-lock v2/v3 夹具，完成安全 JSON 读取、npm 包名提取和 Node 依赖位置解析。
 - 文件边界合规声明：所有新增源码、测试、报告、缓存和 Git 修改均位于项目根目录内；没有外部写入。
+
+### 记录 0006：实现 package-lock v2/v3 安全解析
+
+- 时间：2026-06-21 16:49，Asia/Shanghai
+- 执行者：Codex 当前线程
+- 对应里程碑：M1 依赖解析与统一图模型
+- 本次目标：将 npm package-lock v2/v3 转换为统一组件和依赖图，同时显式处理不完整或恶意输入。
+- 开始前状态：确定性依赖图已提交为 `58091b8`；没有输入解析器。
+- 实际完成：
+  - 先建立失败测试，覆盖 v2/v3、scoped 包、嵌套依赖、开发依赖、重复组件、workspace link 和损坏输入。
+  - 实现 20 MiB 默认体积限制、UTF-8 解码、JSON 类型校验和 lockfileVersion 校验。
+  - 实现 Node 向父级 `node_modules` 查找依赖的解析规则，区分 runtime、development、optional 和 peer 范围。
+  - 支持 workspace link 读取目标包元数据，但不执行任何项目脚本。
+  - 对缺少版本、无法解析依赖、无法识别位置和失效 link 生成结构化告警，不静默忽略。
+  - 将重复包位置合并为稳定 PURL 组件，同时保留全部来源 JSON Pointer。
+- 创建文件：`supplyguard/parsers/__init__.py`、`supplyguard/parsers/package_lock.py`、`tests/test_package_lock_parser.py`。
+- 修改文件：`supplyguard/domain/__init__.py`、`supplyguard/domain/models.py`、`supplyguard/graph/model.py`、`REPORT.md`。
+- 删除文件：无。
+- 关键命令与检查：`scripts\check.ps1`；`.venv\Scripts\python.exe -W error -m unittest discover -s tests -p 'test_*.py'`；`git diff --check`。
+- 测试结果：首次失败测试因缺少 DependencyScope/解析器而按预期失败；实现后语法编译、23 项 unittest、warnings-as-errors 和 diff 格式检查全部通过；普通测试约 0.234 秒。
+- 技术决策及理由：组件 scope 保存在依赖边而非组件；解析器只读取 lockfile，不调用 npm；所有非致命数据缺口必须形成结构化告警。
+- 计划偏差：没有建立单独 JSON fixture 文件，当前小型夹具以内联 JSON 保持测试可读性；引入大型公开样本时再使用固定文件和许可证记录。
+- 未完成事项：Python 固定版本依赖解析器、更多真实公开 lockfile 回归样本和 CLI scan 接入尚未完成。
+- 风险与阻塞：npm alias、更多 workspace 布局及平台条件依赖仍需真实数据验证；现阶段不会宣称覆盖全部 npm 语义。
+- 下一步：选择 requirements.txt 精确 `==` 固定格式作为首批 Python 输入，先定义注释、环境标记、哈希和非固定版本处理测试。
+- 文件边界合规声明：真实文件测试只在项目内 `.tmp` 创建临时目录；所有其他代码、报告、缓存和 Git 修改也均位于项目根目录内。
 
 ---
 

@@ -11,6 +11,7 @@
 | 项目阶段 | M2：OSV 数据同步与漏洞匹配（待启动） |
 | 总体状态 | M0、M1 已验收；两类依赖输入和统一图模型可用 |
 | 当前版本 | v0.1.0.dev0 |
+| 公开仓库 | https://github.com/Knightzheng/SupplyGuard |
 | 当前工作重点 | 设计本地 OSV advisory 模型、快照存储和版本匹配接口 |
 | 已完成 | M0 全部内容；M1 两类输入、领域模型、依赖图、路径/环算法和显式解析告警 |
 | 进行中 | 无 |
@@ -258,6 +259,32 @@
 - 风险与阻塞：requirements 是扁平清单，无法还原真实传递来源；当前图只表达“文件列出这些组件”，后续报告必须明确这一限制。
 - 下一步：进入 M2，以固定 OSV 小样本实现 advisory 模型、事件范围匹配和本地存储接口。
 - 文件边界合规声明：文件读取测试只在项目内 `.tmp` 写入临时数据；源码、测试、报告、缓存和 Git 修改全部位于项目根目录内。
+
+### 记录 0008：创建并发布 GitHub 公开仓库
+
+- 时间：2026-06-21 17:22，Asia/Shanghai
+- 执行者：Codex 当前线程
+- 对应里程碑：跨里程碑发布检查点
+- 本次目标：建立以项目命名的 GitHub 公开仓库，完善公开 README 并推送现有历史。
+- 开始前状态：本地 `main` 含 5 个功能提交，没有远端；用户已经安装 GitHub CLI 并认证账号 `Knightzheng`。
+- 实际完成：
+  - 重写公开 README，补充项目目标、当前进度、已实现能力、架构图、快速开始、29 项测试范围、安全边界和治理入口。
+  - 将 pyproject 中的占位 URL 替换为真实 GitHub 地址。
+  - 增加 Apache License 2.0 文本，与 pyproject 许可证声明保持一致。
+  - 运行测试、diff 检查和敏感信息扫描后形成提交 `42d8646`。
+  - 创建公开仓库 `Knightzheng/SupplyGuard`，配置 `origin`，推送 `main` 全部历史。
+  - 设置仓库描述和 `sbom`、`software-supply-chain`、`security`、`osv`、`python` topics。
+- 创建文件：`LICENSE`。
+- 修改文件：`README.md`、`pyproject.toml`、`REPORT.md`、项目内 `.git/config`。
+- 删除文件：无。
+- 关键命令与检查：`scripts\check.ps1`；`git diff --check`；`rg` 敏感字段扫描；`gh repo create SupplyGuard --public --source . --remote origin --push`；`gh repo edit`。
+- 测试结果：29 项 unittest 全部通过，约 0.248 秒；敏感信息赋值扫描无命中；仓库查询确认 visibility 为 PUBLIC，地址为 `https://github.com/Knightzheng/SupplyGuard`。
+- 技术决策及理由：新仓库直接以现有 `main` 历史初始化，没有创建无意义的初始 PR；后续功能开发应使用分支和 PR 工作流。
+- 计划偏差：无。
+- 未完成事项：M2 尚未产生代码；GitHub Actions 将在需要 CI 时按计划加入。
+- 风险与阻塞：GitHub 创建后的默认分支元数据可能存在短暂同步延迟，但 `main` 已成功推送并设置 upstream。
+- 下一步：开始 M2，先用仓库内固定 OSV 样本实现 Advisory 模型、版本事件范围和匹配测试。
+- 文件边界合规声明：本地文件修改仅发生在项目根目录和项目内 `.git`；GitHub 写入属于用户明确授权的远端仓库操作，没有写入其他本地目录。
 
 ---
 

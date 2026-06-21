@@ -12,13 +12,14 @@
 | 总体状态 | M0、M1 已验收；M2 Advisory 模型和首批匹配已完成 |
 | 当前版本 | v0.1.0.dev0 |
 | 公开仓库 | https://github.com/Knightzheng/SupplyGuard |
+| 当前开发分支/PR | `codex/osv-advisory-models` / https://github.com/Knightzheng/SupplyGuard/pull/1 |
 | 当前工作重点 | 设计 SQLite Advisory Repository、本地索引和原子快照导入 |
 | 已完成 | M0、M1；M2 OSV 模型、安全解析、SemVer 区间和可解释组件匹配 |
 | 进行中 | M2：OSV 数据同步与漏洞匹配 |
 | 下一任务 | 建立与存储实现解耦的 Advisory Repository，并以 SQLite 完成离线包坐标查询 |
 | 当前阻塞 | 无 |
 | 额外金钱成本 | 0 元 |
-| 最后更新时间 | 2026-06-21 17:24，Asia/Shanghai |
+| 最后更新时间 | 2026-06-21 17:26，Asia/Shanghai |
 
 ## 2. 里程碑看板
 
@@ -317,6 +318,30 @@
 - 下一步：定义 Advisory Repository 接口，使用标准库 SQLite 实现按生态/包名的离线候选查询和原子快照替换。
 - 文件边界合规声明：固定样本、临时测试数据、源码、报告和缓存全部位于项目根目录内；外部 OSV Schema 仅只读访问。
 - 勘误：记录 0008 的时间误写为 17:22；当时 `Get-Date` 实际输出为 2026-06-21 17:15 +08:00。历史记录不改写，本条追加纠正。
+
+### 记录 0010：推送 M2 分支并创建草稿 PR
+
+- 时间：2026-06-21 17:26，Asia/Shanghai
+- 执行者：Codex 当前线程
+- 对应里程碑：M2 OSV 数据同步与漏洞匹配
+- 本次目标：按 GitHub 分支工作流发布 M2 第一单元，形成可审查检查点。
+- 开始前状态：M2 代码、README 和记录已经通过 41 项测试，尚未提交到远端功能分支。
+- 实际完成：
+  - 提交 `04c1a67 feat: add OSV advisory matching`。
+  - 推送 `codex/osv-advisory-models` 并设置 upstream。
+  - 创建草稿 PR #1 `[codex] add OSV advisory matching`，目标分支为 `main`。
+  - PR 正文记录变更、原因、影响、未实现边界和验证命令。
+- 创建文件：项目跟踪文件无新增；忽略目录 `.tmp` 中创建 `pr-body.md` 作为 GitHub CLI 输入。
+- 修改文件：`REPORT.md`。
+- 删除文件：无。
+- 关键命令与检查：`git push -u origin codex/osv-advisory-models`；`gh pr create --draft`；`gh pr view 1`。
+- 测试结果：提交前 41 项 unittest 与 warnings-as-errors 全部通过；PR 查询确认 state=OPEN、isDraft=true、base=main、head=codex/osv-advisory-models。
+- 技术决策及理由：M2 后续小单元继续推送到同一草稿 PR，待本阶段检查点稳定后再转为可审查状态。
+- 计划偏差：首次 `gh pr view` 未提供 PR 编号而返回参数错误；PR 已在前一步成功创建，随后使用编号 1 查询确认，没有重复创建。
+- 未完成事项：草稿 PR 未合并；SQLite Repository、快照导入和数据同步仍待实现。
+- 风险与阻塞：无。
+- 下一步：在当前功能分支先以失败测试定义 Advisory Repository 和原子 SQLite 快照导入，再实现代码并推送到 PR #1。
+- 文件边界合规声明：本地跟踪修改仅位于项目根目录；PR 临时正文位于项目内 `.tmp`；远端写入仅针对用户授权的 `Knightzheng/SupplyGuard`。
 
 ---
 

@@ -28,12 +28,11 @@ dependencies = []
 supplyguard = "supplyguard.cli:main"
 
 [project.urls]
-Documentation = "https://example.invalid/supplyguard"
-Repository = "https://example.invalid/supplyguard"
+Documentation = "https://github.com/Knightzheng/SupplyGuard#readme"
+Repository = "https://github.com/Knightzheng/SupplyGuard"
 
 [tool.hatch.version]
 path = "supplyguard/__about__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["supplyguard"]
-

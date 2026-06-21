@@ -8,23 +8,23 @@
 
 | 项目 | 当前状态 |
 |---|---|
-| 项目阶段 | M1：依赖解析与统一图模型（待启动） |
-| 总体状态 | M0 已验收，项目可离线开发和测试 |
+| 项目阶段 | M2：OSV 数据同步与漏洞匹配（待启动） |
+| 总体状态 | M0、M1 已验收；两类依赖输入和统一图模型可用 |
 | 当前版本 | v0.1.0.dev0 |
-| 当前工作重点 | 实现 package-lock v2/v3 解析器和统一依赖图 |
-| 已完成 | M0 全部内容；M1 领域模型、依赖图、路径/环算法、package-lock v2/v3 安全解析 |
-| 进行中 | M1：依赖解析与统一图模型 |
-| 下一任务 | 选择并实现 Python 固定版本依赖输入，完成 M1 的第二类 MVP 解析器 |
+| 当前工作重点 | 设计本地 OSV advisory 模型、快照存储和版本匹配接口 |
+| 已完成 | M0 全部内容；M1 两类输入、领域模型、依赖图、路径/环算法和显式解析告警 |
+| 进行中 | 无 |
+| 下一任务 | 使用仓库内最小 OSV 样本定义 advisory 领域模型和 npm/PyPI 版本匹配测试 |
 | 当前阻塞 | 无 |
 | 额外金钱成本 | 0 元 |
-| 最后更新时间 | 2026-06-21 16:49，Asia/Shanghai |
+| 最后更新时间 | 2026-06-21 16:56，Asia/Shanghai |
 
 ## 2. 里程碑看板
 
 | 里程碑 | 状态 | 完成度 | 验收说明 |
 |---|---|---:|---|
 | M0 治理和工程骨架 | 已完成 | 100% | 治理文档、项目骨架、最小 CLI、独立环境和测试入口均已验证 |
-| M1 依赖解析与统一图模型 | 进行中 | 75% | package-lock v2/v3、Node 嵌套解析和 workspace link 已覆盖；Python 固定依赖输入待完成 |
+| M1 依赖解析与统一图模型 | 已完成 | 100% | package-lock v2/v3 与精确 requirements 输入、统一图、证据、路径和异常测试均已完成 |
 | M2 OSV 同步与漏洞匹配 | 未开始 | 0% | — |
 | M3 风险报告和 SBOM | 未开始 | 0% | — |
 | M4 API 与 Web 控制台 | 未开始 | 0% | — |
@@ -43,6 +43,7 @@
 | ADR-004 | 核心领域模型与 API/UI 解耦 | 已采纳 | 避免框架绑定并便于测试 |
 | ADR-005 | M0 使用 argparse 与 unittest 建立无第三方依赖的离线基线 | 已采纳 | PyPI 当前不可达；先保证独立环境和核心开发链路可运行，Typer/pytest 作为后续可替换工具而非运行前提 |
 | ADR-006 | 组件稳定 ID 使用规范化 Package URL | 已采纳 | PURL 可读、确定且便于后续 SBOM 与 OSV 对接；来源证据不参与 ID，避免同一组件因文件位置变化而改变身份 |
+| ADR-007 | 首批 Python 输入采用 requirements.txt 精确 `==` 固定版本 | 已采纳 | 可用标准库离线解析；通配符、范围、URL 和 include 不伪装成精确组件，而是显式告警 |
 
 后续改变已采纳决策时，必须追加新的决策记录并说明替代关系。
 
@@ -50,7 +51,7 @@
 
 | 编号 | 等级 | 事项 | 处理计划 |
 |---|---|---|---|
-| R-001 | 中 | 首批 Python 固定依赖格式尚未最终限定 | M1 开始前比较 requirements、Poetry、uv 锁文件并选择一种主格式 |
+| R-001 | 已关闭 | 首批 Python 固定依赖格式尚未最终限定 | 已选择 requirements.txt 精确 `==` 格式；uv.lock/Poetry 可作为后续插件 |
 | R-002 | 中 | 用户主要面试语言尚未确认 | 核心先保持 Python；在进入 Java 生态或大规模前端工作前再确认，不阻塞 M0 |
 | R-003 | 低 | OSV 本地数据规模和同步方式尚未实测 | M2 先针对单一生态做小规模原型与磁盘占用测量 |
 | R-004 | 低 | 当前环境访问 PyPI 会长时间无响应 | M0 已采用标准库离线链路；后续引入第三方依赖前先做短时连通性检查，禁止重复长时间重试 |
@@ -60,10 +61,10 @@
 新线程必须先阅读 `PROJECT_RULES.md`，然后执行以下最小任务：
 
 1. 检查项目文件树和 Git 状态。
-2. 建立 package-lock v2/v3 的最小、嵌套、scope 包和损坏输入夹具。
-3. 实现文件大小限制、JSON 结构校验和包位置解析，不执行待扫描项目代码。
-4. 将解析结果转换为已实现的 Component、DependencyEdge 和 SourceEvidence。
-5. 运行 `scripts\check.ps1`，确认现有 11 项测试和新增测试均通过。
+2. 使用仓库内最小 OSV JSON 样本定义 Advisory、AffectedPackage、VersionRange 等领域模型。
+3. 先添加 npm/PyPI 版本边界、引入事件和修复事件测试，再实现匹配。
+4. 将 advisory 读取接口与具体存储解耦，为后续 SQLite 索引保留边界。
+5. 运行 `scripts\check.ps1`，确认现有 29 项测试和新增测试均通过。
 6. 更新本文件的当前快照并追加推进记录。
 
 ## 6. 推进记录
@@ -231,6 +232,32 @@
 - 风险与阻塞：npm alias、更多 workspace 布局及平台条件依赖仍需真实数据验证；现阶段不会宣称覆盖全部 npm 语义。
 - 下一步：选择 requirements.txt 精确 `==` 固定格式作为首批 Python 输入，先定义注释、环境标记、哈希和非固定版本处理测试。
 - 文件边界合规声明：真实文件测试只在项目内 `.tmp` 创建临时目录；所有其他代码、报告、缓存和 Git 修改也均位于项目根目录内。
+
+### 记录 0007：完成 Python 固定依赖解析与 M1 验收
+
+- 时间：2026-06-21 16:56，Asia/Shanghai
+- 执行者：Codex 当前线程
+- 对应里程碑：M1 依赖解析与统一图模型
+- 本次目标：完成第二类 MVP 输入并对 M1 整体验收。
+- 开始前状态：package-lock 解析已提交为 `640abc6`；Python 输入格式尚未确定。
+- 实际完成：
+  - 选择 requirements.txt 精确 `name==version` 作为首批 Python 输入。
+  - 先建立失败测试，再实现注释、extras、hash continuation、重复固定版本和环境标记解析。
+  - 对版本范围、通配符、URL、include、index 指令和其他未知格式生成显式告警并跳过。
+  - 实现 5 MiB 默认体积限制、UTF-8 文件入口和项目相对行号证据。
+  - 将 ParseWarning 提取为解析器共享模型。
+  - 复核 M1 验收项并同步 README 当前能力与限制。
+- 创建文件：`supplyguard/parsers/models.py`、`supplyguard/parsers/requirements.py`、`tests/test_requirements_parser.py`。
+- 修改文件：`supplyguard/parsers/__init__.py`、`supplyguard/parsers/package_lock.py`、`README.md`、`REPORT.md`。
+- 删除文件：无。
+- 关键命令与检查：`scripts\check.ps1`；`.venv\Scripts\python.exe -W error -m unittest discover -s tests -p 'test_*.py'`；`git diff --check`。
+- 测试结果：首次失败测试因 requirements 模块不存在而按预期失败；实现后语法编译、29 项 unittest、warnings-as-errors 和 diff 格式检查全部通过；普通测试约 0.251 秒。
+- 技术决策及理由：requirements 输入只接受真正精确的 `==` 版本；解析器不安装、不解析 include、不访问索引，也不执行环境 marker，从而保持确定性和安全边界。
+- 计划偏差：M1 原计划只笼统写“Python 固定版本输入”，现已明确为 requirements 精确固定格式，属于计划内决策。
+- 未完成事项：尚未加入真实公开仓库回归样本；CLI 尚未暴露 scan 命令；这些不属于 M1 的核心验收阻塞项。
+- 风险与阻塞：requirements 是扁平清单，无法还原真实传递来源；当前图只表达“文件列出这些组件”，后续报告必须明确这一限制。
+- 下一步：进入 M2，以固定 OSV 小样本实现 advisory 模型、事件范围匹配和本地存储接口。
+- 文件边界合规声明：文件读取测试只在项目内 `.tmp` 写入临时数据；源码、测试、报告、缓存和 Git 修改全部位于项目根目录内。
 
 ---
 

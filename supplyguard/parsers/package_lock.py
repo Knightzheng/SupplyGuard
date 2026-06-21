@@ -12,6 +12,7 @@ from supplyguard.domain import (
     SourceEvidence,
 )
 from supplyguard.graph import DependencyGraph
+from supplyguard.parsers.models import ParseWarning
 
 MAX_LOCKFILE_BYTES = 20 * 1024 * 1024
 
@@ -25,15 +26,6 @@ _DEPENDENCY_FIELDS = (
 
 class PackageLockError(ValueError):
     """Raised when a package-lock file cannot be parsed safely."""
-
-
-@dataclass(frozen=True, order=True, slots=True)
-class ParseWarning:
-    """A non-fatal package-lock issue that must remain visible to users."""
-
-    code: str
-    message: str
-    evidence: SourceEvidence
 
 
 @dataclass(frozen=True, slots=True)
